@@ -30,7 +30,11 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+# Application definition
+
 INSTALLED_APPS = [
+    # 'studentapp',     # Your existing student app
+    'optimization',   # Your new recommendation system app
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
