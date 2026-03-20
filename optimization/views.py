@@ -58,12 +58,16 @@
 #     return render(request, 'optimization/dashboard.html')
 from django.http import JsonResponse
 from django.shortcuts import render
-from .models import Factory, Product  # Import models to fetch data
+from .models import Factory, Product, Order  # Import models to fetch data
 from .services.recommender import get_best_factory
 from .services.simulation import SimulationEngine
 from .services.clustering_service import ClusteringService
 
 # --- NEW: Master Data API (To meet requirement documentation) ---
+
+
+
+
 
 def factory_list_api(request):
     """
@@ -98,10 +102,20 @@ def recommendation_api(request):
     return JsonResponse({"error": "Product not found"}, status=404)
 
 
+# def simulation_api(request, product_id):
+#     try:
+#         engine = SimulationEngine()
+#         data = engine.simulate_reassignment(product_id)
+#         return JsonResponse(data)
+#     except Exception as e:
+#         return JsonResponse({"error": str(e)}, status=500)
 def simulation_api(request, product_id):
+    # NEW: read optional region and ship_mode from query string
+    region = request.GET.get('region', 'Interior')
+    ship_mode = request.GET.get('ship_mode', 'Standard Class')
     try:
         engine = SimulationEngine()
-        data = engine.simulate_reassignment(product_id)
+        data = engine.simulate_reassignment(product_id, region, ship_mode)  # pass them
         return JsonResponse(data)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -118,3 +132,23 @@ def clustering_api(request):
 
 def dashboard(request):
     return render(request, 'optimization/dashboard.html')
+
+# --- NEW: Endpoints for dynamic filters and KPIs ---
+def get_regions(request):
+    """Return distinct regions from orders."""
+    regions = Order.objects.values_list('region', flat=True).distinct()
+    return JsonResponse(list(regions), safe=False)
+
+def get_ship_modes(request):
+    """Return distinct ship modes from orders."""
+    ship_modes = Order.objects.values_list('ship_mode', flat=True).distinct()
+    return JsonResponse(list(ship_modes), safe=False)
+
+def coverage_kpi(request):
+    """Calculate percentage of products with order data."""
+    total_products = Product.objects.count()
+    if total_products == 0:
+        return JsonResponse({"coverage": 0})
+    products_with_orders = Order.objects.values('product').distinct().count()
+    coverage = (products_with_orders / total_products) * 100
+    return JsonResponse({"coverage": round(coverage, 2)})

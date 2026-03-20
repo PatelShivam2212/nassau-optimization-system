@@ -11,8 +11,12 @@ class Command(BaseCommand):
         metrics = ml.train_model()
 
         if isinstance(metrics, dict):
-            self.stdout.write(self.style.SUCCESS(f"Model Trained Successfully!"))
-            self.stdout.write(f"R2 Score: {metrics['R2']:.4f}")
-            self.stdout.write(f"MAE: {metrics['MAE']:.2f} days")
+            self.stdout.write(self.style.SUCCESS("Model Trained Successfully!"))
+            # Extract best model metrics
+            best_metrics = metrics['all_results'][metrics['winner']]
+            self.stdout.write(f"Winner: {metrics['winner']}")
+            self.stdout.write(f"R2 Score: {best_metrics['R2']:.4f}")
+            self.stdout.write(f"MAE: {best_metrics['MAE']:.2f} days")
+            self.stdout.write(f"RMSE: {best_metrics['RMSE']:.2f} days")
         else:
             self.stdout.write(self.style.ERROR(metrics))
